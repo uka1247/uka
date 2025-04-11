@@ -194,11 +194,3 @@ if "logs" in st.session_state and st.session_state["logs"]:
     if st.checkbox("🕵️ ログ一覧を表示する（開発者向け）"):
         df = pd.DataFrame(st.session_state["logs"])
         st.dataframe(df)
-# ✅ CSVダウンロード＋ログ一覧
-if "logs" in st.session_state and st.session_state["logs"]:
-    df = pd.DataFrame(st.session_state["logs"])
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("📥 ログをCSVでダウンロード", data=csv, file_name="liberal_ai_log.csv", mime="text/csv")
-
-    st.markdown("### 🧾 ログ一覧")
-st.dataframe(df)
