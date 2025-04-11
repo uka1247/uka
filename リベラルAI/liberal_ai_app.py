@@ -142,7 +142,7 @@ if st.button("✨ 分析する") and user_input.strip() != "":
 
 最後に、最近の社会的な文脈や報道、世論動向などを反映した、中立的な補足を2~5文だけ添えてください。
 語り口は穏やかで、読者に考える余地を残すようにしてください。
-補足の冒頭には「補足になりますが、」などの定型句は使わず、自然な語り出しにしてください。
+補足の冒頭には「補足になりますが、」などの定型句をつかっり、自然な語り出しをランダムにしてください。
 """}
         ]
 
@@ -163,7 +163,7 @@ if st.button("✨ 分析する") and user_input.strip() != "":
             st.markdown(f'<div class="box agree"><strong>🔵 賛成の立場：</strong><br>{agree_match.group(1).strip()}</div>', unsafe_allow_html=True)
 
         if disagree_match:
-            st.markdown(f'<div class="box disagree"><strong>🔴 反対の立場：</strong><br>{disagree_match.group(1).strip()}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="box disagree"><strong>🔴 視点をずらした立場：</strong><br>{disagree_match.group(1).strip()}</div>', unsafe_allow_html=True)
 
         if len(extra_match) > 1:
             st.markdown(f'<div class="box extra">{extra_match[1].strip()}</div>', unsafe_allow_html=True)
