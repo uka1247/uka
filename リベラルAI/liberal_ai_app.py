@@ -7,8 +7,6 @@ import csv
 import os
 from datetime import datetime
 import streamlit.components.v1 as components
-import gspread
-from google.oauth2 import service_account
 
 # 🔑 OpenAI APIキーを設定（環境変数から）
 api_key = os.getenv("OPENAI_API_KEY")
@@ -63,19 +61,6 @@ st.markdown("""
 # ヘッダー
 st.markdown('<div class="main-title">🧠 リベラルAI</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtext">あなたの意見に対して賛否を中立的に提示する対話AI</div>', unsafe_allow_html=True)
-# セッションログ初期化
-if "logs" not in st.session_state:
-    st.session_state["logs"] = []
-
-# ユーザー入力
-user_input = st.text_area("💬 あなたの意見を入力してください")
-
-# ✅ ログ一覧チェック（常に上部に表示）
-if st.session_state["logs"]:
-    st.markdown("#### 🛠 開発者用ツール")
-    if st.checkbox("🕵️ ログ一覧を表示する（クリックで展開）"):
-        df = pd.DataFrame(st.session_state["logs"])
-        st.dataframe(df)
 
 # トピック例の表示
 st.markdown("<div style='color:#7f8c8d; font-size:0.95em; margin-bottom:0.5em;'>🔎 最近の気になるワード</div>", unsafe_allow_html=True)
@@ -166,9 +151,6 @@ if st.button("✨ 分析する") and user_input.strip() != "":
             messages=messages
         )
         result = response.choices[0].message.content
-        agree_match = re.search(r"🔵 賛成の立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
-        disagree_match = re.search(r"🔴.*?立場：\s*(.*?)(?=\n\n|$)", result, re.DOTALL)
-        extra_match = re.split(r"🔴.*?立場：.*?\n\n", result, flags=re.DOTALL)
 
         # 出力の分解（正規表現）
         st.markdown("### 🔍 AIによる2つの視点と補足")
@@ -190,20 +172,33 @@ if st.button("✨ 分析する") and user_input.strip() != "":
             st.warning("⚠️ 結果のフォーマットが想定と異なります。以下の内容をご確認ください。")
             st.text(result)
 
- # ✅ セッションログへ保存
-    st.session_state["logs"].append({
-        "timestamp": now,
-        "user_input": user_input.strip(),
-        "agree": agree,
-        "disagree": disagree,
-        "extra": extra
-    })
+        # ✅ CSVログ保存
+        log_path = "liberal_ai_log.csv"
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        file_exists = os.path.isfile(log_path)
 
-# ✅ ダウンロードボタン（ログCSV）
-if st.session_state["logs"]:
+        with open(log_path, mode='a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            if not file_exists:
+                writer.writerow(["timestamp", "user_input", "agree", "disagree", "extra"])
+            writer.writerow([
+                now,
+                user_input.strip(),
+                agree_match.group(1).strip() if agree_match else "",
+                disagree_match.group(1).strip() if disagree_match else "",
+                extra_match[1].strip() if len(extra_match) > 1 else ""
+            ])
+
+# ✅ 隠しログ表示（開発者向け）
+if "logs" in st.session_state and st.session_state["logs"]:
+    if st.checkbox("🕵️ ログ一覧を表示する（開発者向け）"):
+        df = pd.DataFrame(st.session_state["logs"])
+        st.dataframe(df)
+# ✅ CSVダウンロード＋ログ一覧
+if "logs" in st.session_state and st.session_state["logs"]:
     df = pd.DataFrame(st.session_state["logs"])
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("📥 ログをCSVでダウンロード", data=csv, file_name="liberal_ai_log.csv", mime="text/csv")
-       
 
-#
+    if st.checkbox("🕵️ ログ一覧を表示する（クリックで開く）"):
+        st.dataframe(df)
