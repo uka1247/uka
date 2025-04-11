@@ -7,6 +7,8 @@ import csv
 import os
 from datetime import datetime
 import streamlit.components.v1 as components
+import gspread
+from google.oauth2 import service_account
 
 # 🔑 OpenAI APIキーを設定（環境変数から）
 api_key = os.getenv("OPENAI_API_KEY")
@@ -120,7 +122,14 @@ cards_html += "</div>"
 components.html(cards_html, height=180)
 
 # 入力欄
-user_input = st.text_area("💬 あなたの意見をご自由に入力してください", height=150)
+user_input = st.text_area(
+# ✅ ログ表示チェック（上部に移動・わかりやすく）
+if "logs" in st.session_state and st.session_state["logs"]:
+    st.markdown("### 🛠 開発者用ツール")
+    if st.checkbox("🕵️ ログ一覧を表示する（クリックで開く）"):
+        df = pd.DataFrame(st.session_state["logs"])
+        st.dataframe(df)
+"💬 あなたの意見をご自由に入力してください", height=150)
 
 # 分析実行
 if st.button("✨ 分析する") and user_input.strip() != "":
@@ -151,6 +160,9 @@ if st.button("✨ 分析する") and user_input.strip() != "":
             messages=messages
         )
         result = response.choices[0].message.content
+        agree_match = re.search(r"🔵 賛成の立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
+        disagree_match = re.search(r"🔴.*?立場：\s*(.*?)(?=\n\n|$)", result, re.DOTALL)
+        extra_match = re.split(r"🔴.*?立場：.*?\n\n", result, flags=re.DOTALL)
 
         # 出力の分解（正規表現）
         st.markdown("### 🔍 AIによる2つの視点と補足")
@@ -172,25 +184,55 @@ if st.button("✨ 分析する") and user_input.strip() != "":
             st.warning("⚠️ 結果のフォーマットが想定と異なります。以下の内容をご確認ください。")
             st.text(result)
 
-        # ✅ CSVログ保存
-        log_path = "liberal_ai_log.csv"
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        file_exists = os.path.isfile(log_path)
 
-        with open(log_path, mode='a', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            if not file_exists:
-                writer.writerow(["timestamp", "user_input", "agree", "disagree", "extra"])
-            writer.writerow([
-                now,
-                user_input.strip(),
-                agree_match.group(1).strip() if agree_match else "",
-                disagree_match.group(1).strip() if disagree_match else "",
-                extra_match[1].strip() if len(extra_match) > 1 else ""
-            ])
+       
 
-# ✅ 隠しログ表示（開発者向け）
-if "logs" in st.session_state and st.session_state["logs"]:
-    if st.checkbox("🕵️ ログ一覧を表示する（開発者向け）"):
-        df = pd.DataFrame(st.session_state["logs"])
-        st.dataframe(df)
+# Google Sheets の設定
+SHEET_ID = "1wheYg5RCqy6iSeujXUPQbOZWAjSx_BRTpFRK5rOrUTo"
+WORKSHEET_NAME = "ログ"  # シート名が "ログ" であることを確認
+
+# 認証してスプレッドシートにアクセス
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["gcp_service_account"],
+    scopes=["https://www.googleapis.com/auth/spreadsheets"]
+)
+gc = gspread.authorize(credentials)
+worksheet = gc.open_by_key(SHEET_ID).worksheet(WORKSHEET_NAME)
+
+# 所要時間の計測(例として処理前後で time を使う)
+import time
+start_time = time.time()
+
+# ... ここで OpenAI API 処理などを実施 ...
+
+end_time = time.time()
+elapsed_time = round(end_time - start_time, 2)
+
+# スプレッドシートに追記
+worksheet.append_row([
+    now,
+    user_input.strip(),
+    agree_match.group(1).strip() if agree_match else "",
+    disagree_match.group(1).strip() if disagree_match else "",
+    extra_match[1].strip() if len(extra_match) > 1 else ""
+])
+
+# ✅ OpenAIの返答を取得
+result = response.choices[0].message.content
+
+# ✅ 出力を分解
+agree_match = re.search(r"🔵 賛成の立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
+disagree_match = re.search(r"🔴.*?立場：\s*(.*?)(?=\n\n|$)", result, re.DOTALL)
+extra_match = re.split(r"🔴.*?立場：.*?\n\n", result, flags=re.DOTALL)
+
+# ✅ 現在時刻を取得（ログに使う）
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# ✅ スプレッドシートに書き込む
+worksheet.append_row([
+    now,
+    user_input,
+    agree_match.group(1) if agree_match else "",
+    disagree_match.group(1) if disagree_match else "",
+    extra_match[1] if len(extra_match) > 1 else ""
+])
