@@ -152,80 +152,20 @@ if st.button("✨ 分析する") and user_input.strip() != "":
             model="gpt-4o",
             messages=messages
         )
-        result = response.choices[0].message.content
-        agree_match = re.search(r"🔵 賛成の立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
-        disagree_match = re.search(r"🔴.*?立場：\s*(.*?)(?=\n\n|$)", result, re.DOTALL)
-        extra_match = re.split(r"🔴.*?立場：.*?\n\n", result, flags=re.DOTALL)
+        
+    result = response.choices[0].message.content
 
-        # 出力の分解（正規表現）
-        st.markdown("### 🔍 AIによる2つの視点と補足")
+    agree_match = re.search(r"🔵 賛成の立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
+    disagree_match = re.search(r"🔴.*?立場：\s*(.*?)(?=\n\n|$)", result, re.DOTALL)
+    extra_match = re.split(r"🔴.*?立場：.*?\n\n", result, flags=re.DOTALL)
 
-        agree_match = re.search(r"🔵 賛成の立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
-        disagree_match = re.search(r"🔴.*?立場：\s*(.*?)(?=\n\n|$)", result, re.DOTALL)
-        extra_match = re.split(r"🔴.*?立場：.*?\n\n", result, flags=re.DOTALL)
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        if agree_match:
-            st.markdown(f'<div class="box agree"><strong>🔵 賛成の立場：</strong><br>{agree_match.group(1).strip()}</div>', unsafe_allow_html=True)
+    worksheet.append_row([
+        now,
+        user_input.strip(),
+        agree_match.group(1).strip() if agree_match else "",
+        disagree_match.group(1).strip() if disagree_match else "",
+        extra_match[1].strip() if len(extra_match) > 1 else ""
+    ])
 
-        if disagree_match:
-            st.markdown(f'<div class="box disagree"><strong>🔴 反対の立場：</strong><br>{disagree_match.group(1).strip()}</div>', unsafe_allow_html=True)
-
-        if len(extra_match) > 1:
-            st.markdown(f'<div class="box extra">{extra_match[1].strip()}</div>', unsafe_allow_html=True)
-
-        if not (agree_match or disagree_match):
-            st.warning("⚠️ 結果のフォーマットが想定と異なります。以下の内容をご確認ください。")
-            st.text(result)
-
-
-       
-
-# Google Sheets の設定
-SHEET_ID = "1wheYg5RCqy6iSeujXUPQbOZWAjSx_BRTpFRK5rOrUTo"
-WORKSHEET_NAME = "ログ"  # シート名が "ログ" であることを確認
-
-# 認証してスプレッドシートにアクセス
-credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"],
-    scopes=["https://www.googleapis.com/auth/spreadsheets"]
-)
-gc = gspread.authorize(credentials)
-worksheet = gc.open_by_key(SHEET_ID).worksheet(WORKSHEET_NAME)
-
-# 所要時間の計測(例として処理前後で time を使う)
-import time
-start_time = time.time()
-
-# ... ここで OpenAI API 処理などを実施 ...
-
-end_time = time.time()
-elapsed_time = round(end_time - start_time, 2)
-
-# スプレッドシートに追記
-worksheet.append_row([
-    now,
-    user_input.strip(),
-    agree_match.group(1).strip() if agree_match else "",
-    disagree_match.group(1).strip() if disagree_match else "",
-    extra_match[1].strip() if len(extra_match) > 1 else ""
-])
-
-# ✅ OpenAIの返答を取得
-result = response.choices[0].message.content
-
-# ✅ 出力を分解
-agree_match = re.search(...)
-disagree_match = re.search(...)
-extra_match = re.split(...)
-
-# ✅ 現在時刻を取得（ログに使う）
-now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-# ✅ スプレッドシートに書き込む
-worksheet.append_row([
-    now,
-    user_input,
-    agree_match.group(1) if agree_match else "",
-    disagree_match.group(1) if disagree_match else "",
-    extra_match[1] if len(extra_match) > 1 else ""
-])
