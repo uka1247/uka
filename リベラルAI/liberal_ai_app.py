@@ -200,5 +200,5 @@ if "logs" in st.session_state and st.session_state["logs"]:
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("📥 ログをCSVでダウンロード", data=csv, file_name="liberal_ai_log.csv", mime="text/csv")
 
-    if st.checkbox("🕵️ ログ一覧を表示する（クリックで開く）"):
-        st.dataframe(df)
+    st.markdown("### 🧾 ログ一覧")
+st.dataframe(df)
