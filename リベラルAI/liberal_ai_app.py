@@ -119,10 +119,6 @@ for t in random_topics:
 cards_html += "</div>"
 components.html(cards_html, height=180)
 
-# セッションログ初期化
-if "logs" not in st.session_state:
-    st.session_state["logs"] = []
-
 # 入力欄
 user_input = st.text_area("💬 あなたの意見をご自由に入力してください", height=150)
 
@@ -176,17 +172,25 @@ if st.button("✨ 分析する") and user_input.strip() != "":
             st.warning("⚠️ 結果のフォーマットが想定と異なります。以下の内容をご確認ください。")
             st.text(result)
 
- # ✅ セッションログへ保存
-    st.session_state["logs"].append({
-        "timestamp": now,
-        "user_input": user_input.strip(),
-        "agree": agree,
-        "disagree": disagree,
-        "extra": extra
-    })
+        # ✅ CSVログ保存
+        log_path = "liberal_ai_log.csv"
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        file_exists = os.path.isfile(log_path)
 
-# ✅ ダウンロードボタン（ログCSV）
-if st.session_state["logs"]:
-    df = pd.DataFrame(st.session_state["logs"])
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("📥 ログをCSVでダウンロード", data=csv, file_name="liberal_ai_log.csv", mime="text/csv")
+        with open(log_path, mode='a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            if not file_exists:
+                writer.writerow(["timestamp", "user_input", "agree", "disagree", "extra"])
+            writer.writerow([
+                now,
+                user_input.strip(),
+                agree_match.group(1).strip() if agree_match else "",
+                disagree_match.group(1).strip() if disagree_match else "",
+                extra_match[1].strip() if len(extra_match) > 1 else ""
+            ])
+
+# ✅ 隠しログ表示（開発者向け）
+if "logs" in st.session_state and st.session_state["logs"]:
+    if st.checkbox("🕵️ ログ一覧を表示する（開発者向け）"):
+        df = pd.DataFrame(st.session_state["logs"])
+        st.dataframe(df)
