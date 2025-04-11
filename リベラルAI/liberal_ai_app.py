@@ -4,7 +4,6 @@ from google.oauth2.service_account import Credentials
 import openai
 import re
 import random
-import csv
 import os
 from datetime import datetime
 import streamlit.components.v1 as components
@@ -176,6 +175,18 @@ if st.button("✨ 分析する") and user_input.strip() != "":
         # ✅ CSVログ保存
         log_path = "liberal_ai_log.csv"
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # ✅ セッションログに追加
+    if "logs" not in st.session_state:
+        st.session_state["logs"] = []
+
+    st.session_state["logs"].append({
+        "timestamp": now,
+        "user_input": user_input.strip(),
+        "agree": agree_match.group(1).strip() if agree_match else "",
+        "disagree": disagree_match.group(1).strip() if disagree_match else "",
+        "extra": extra_match[1].strip() if len(extra_match) > 1 else ""
+    })
+
         file_exists = os.path.isfile(log_path)
 
         with open(log_path, mode='a', newline='', encoding='utf-8') as file:
@@ -189,3 +200,9 @@ if st.button("✨ 分析する") and user_input.strip() != "":
                 disagree_match.group(1).strip() if disagree_match else "",
                 extra_match[1].strip() if len(extra_match) > 1 else ""
             ])
+
+# ✅ ダウンロードボタン（セッションログからCSV生成）
+if "logs" in st.session_state and st.session_state["logs"]:
+    df = pd.DataFrame(st.session_state["logs"])
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button("📥 ログをCSVでダウンロード", data=csv, file_name="liberal_ai_log.csv", mime="text/csv")
