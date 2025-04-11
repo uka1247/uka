@@ -1,5 +1,6 @@
 
 import streamlit as st
+from google.oauth2.service_account import Credentials
 import openai
 import re
 import random
