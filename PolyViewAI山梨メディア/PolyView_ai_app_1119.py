@@ -83,11 +83,11 @@ body {{
 st.markdown(background_css, unsafe_allow_html=True)
 
 # ==============================
-# ✔ キーワードカードの大きさを固定
+# ✔ キーワードカードの大きさを固定（SECONDARYボタンだけに適用）
 # ==============================
 button_css = """
 <style>
-div.stButton > button {
+div.stButton > button[kind="secondary"] {
     width: 180px !important;
     height: 90px !important;
     white-space: normal !important;
@@ -102,12 +102,19 @@ div.stButton > button {
 st.markdown(button_css, unsafe_allow_html=True)
 
 # ==============================
-# ✔ 分析ボタンを小さくする CSS（前回と同じサイズ）
+# ✔ 分析ボタンを小さくする（PRIMARYボタンにだけ適用）
 # ==============================
-if st.button("✨ 分析する"):
-    ...
-
-
+small_button_css = """
+<style>
+div.stButton > button[kind="primary"] {
+    width: 130px !important;
+    height: 36px !important;
+    padding: 4px 10px !important;
+    font-size: 0.9em !important;
+    border-radius: 8px !important;
+}
+</style>
+"""
 st.markdown(small_button_css, unsafe_allow_html=True)
 
 # ==============================
@@ -144,6 +151,7 @@ topics = [
     "消費税撤廃",
     "政治家の裏金問題",
     "マスコミによる情報統制は撤廃すべき？",
+
     # 追加17
     "少子化対策はどこまで国が介入すべき？",
     "学校でスマホを全面禁止すべき？",
@@ -170,14 +178,15 @@ if "selected_topic" not in st.session_state:
     st.session_state.selected_topic = ""
 
 # ==============================
-# キーワードカード（ボタン固定サイズ）
+# キーワードカード（SECONDARYボタン = 大きなカード）
 # ==============================
 st.markdown('<div class="topic-caption">🔎 最近の気になるワード</div>', unsafe_allow_html=True)
 
 cols = st.columns(4)
 for i, t in enumerate(random_topics):
     with cols[i]:
-        if st.button(t, key=f"topic_{i}"):
+        # ← type="secondary" なので、大きいカードCSSが当たる
+        if st.button(t, key=f"topic_{i}", type="secondary"):
             st.session_state.selected_topic = t
 
 # ==============================
@@ -190,9 +199,9 @@ user_input = st.text_area(
 )
 
 # ==============================
-# AI 分析
+# AI 分析（PRIMARYボタン = 小さいボタン）
 # ==============================
-if st.button("✨ 分析する") and user_input.strip():
+if st.button("✨ 分析する", type="primary") and user_input.strip():
     with st.spinner("AIが分析中です..."):
 
         messages = [
@@ -237,6 +246,9 @@ if st.button("✨ 分析する") and user_input.strip():
                 f'<div class="box agree"><strong>🔵 賛成の立場：</strong><br>{agree.group(1).strip()}</div>',
                 unsafe_allow_html=True
             )
+
+        disagree_text = ""
+        extra_text = ""
 
         if disagree:
             parts = disagree.group(1).strip().split("\n\n", 1)
