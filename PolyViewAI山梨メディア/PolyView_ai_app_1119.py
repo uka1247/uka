@@ -201,7 +201,7 @@ user_input = st.text_area(
 # ==============================
 # AI 分析（PRIMARYボタン = 小さいボタン）
 # ==============================
-if st.button("✨ 分析する", type="primary") and user_input.strip():
+if st.button("分析する", type="primary") and user_input.strip():
     with st.spinner("AIが分析中です..."):
 
         messages = [
