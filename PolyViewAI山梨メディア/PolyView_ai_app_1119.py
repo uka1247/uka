@@ -177,26 +177,53 @@ random_topics = random.sample(topics, 4)
 if "selected_topic" not in st.session_state:
     st.session_state.selected_topic = ""
 
-# ==============================
-# キーワードカード（SECONDARYボタン = 大きなカード）
-# ==============================
+#
+# =========================================================
+# ⭐変更ポイント①：初期化（現在表示中の4つを固定管理）
+# =========================================================
+if "selected_topic" not in st.session_state:
+    st.session_state.selected_topic = None  # 押したキーワード
+
+if "current_topics" not in st.session_state:
+    st.session_state.current_topics = random.sample(topics, 4)  # 最初の4つ
+
+
+# =========================================================
+# ⭐変更ポイント②：押したキーワードは固定・残りだけランダム更新
+# =========================================================
 st.markdown('<div class="topic-caption">🔎 最近の気になるワード</div>', unsafe_allow_html=True)
 
 cols = st.columns(4)
-for i, t in enumerate(random_topics):
+
+for i, t in enumerate(st.session_state.current_topics):
     with cols[i]:
-        # ← type="secondary" なので、大きいカードCSSが当たる
         if st.button(t, key=f"topic_{i}", type="secondary"):
+
+            # 押したキーワードを保存
             st.session_state.selected_topic = t
 
-# ==============================
-# 入力欄（プレースホルダーにキーワード反映）
-# ==============================
+            # 押したキーワード以外の全候補
+            remaining = [x for x in topics if x != t]
+
+            # 新しい3つをランダムで取得
+            random3 = random.sample(remaining, 3)
+
+            # 次に表示する4つを更新
+            st.session_state.current_topics = [t] + random3
+
+            # 再描画
+            st.rerun()
+
+
+# =========================================================
+# ⭐変更ポイント③：placeholder に固定したキーワードだけ入れる
+# =========================================================
 user_input = st.text_area(
     "💬 あなたの意見をご自由に入力してください",
     height=150,
-    placeholder=st.session_state.get("selected_topic", "")
+    placeholder=st.session_state.selected_topic if st.session_state.selected_topic else ""
 )
+
 
 # ==============================
 # AI 分析（PRIMARYボタン = 小さいボタン）
