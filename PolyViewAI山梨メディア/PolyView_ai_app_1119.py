@@ -104,17 +104,9 @@ st.markdown(button_css, unsafe_allow_html=True)
 # ==============================
 # ✔ 分析ボタンを小さくする CSS（前回と同じサイズ）
 # ==============================
-small_button_css = """
-<style>
-button[data-testid="baseButton-primary"] {
-    width: 130px !important;
-    height: 38px !important;
-    padding: 4px 8px !important;
-    font-size: 0.9em !important;
-    border-radius: 8px !important;
-}
-</style>
-"""
+if st.button("✨ 分析する"):
+    ...
+
 
 st.markdown(small_button_css, unsafe_allow_html=True)
 
