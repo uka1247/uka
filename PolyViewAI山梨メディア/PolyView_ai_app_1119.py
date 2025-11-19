@@ -106,8 +106,8 @@ st.markdown(button_css, unsafe_allow_html=True)
 # ==============================
 small_button_css = """
 <style>
-div.stButton > button[kind="primary"] {
-    width: 140px !important;
+button[data-testid="baseButton-primary"] {
+    width: 130px !important;
     height: 38px !important;
     padding: 4px 8px !important;
     font-size: 0.9em !important;
@@ -115,6 +115,7 @@ div.stButton > button[kind="primary"] {
 }
 </style>
 """
+
 st.markdown(small_button_css, unsafe_allow_html=True)
 
 # ==============================
