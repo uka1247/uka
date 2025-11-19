@@ -217,6 +217,7 @@ if st.button("分析する", type="primary") and user_input.strip():
                 "content": f"""
 以下はユーザーの意見です：
 「{user_input}」
+この意見に対して、以下の形式で出力してください：
 
 🔵 賛成の立場：
 （2〜7文）
@@ -224,58 +225,38 @@ if st.button("分析する", type="primary") and user_input.strip():
 🔴 視点をずらした立場：
 （2〜7文）
 
-最後に最近の社会背景を踏まえた中立的補足を書いてください。
-"""
-            }
+最後に、最近の社会的文脈や報道を踏まえた中立的な補足を添えてください。
+"""}
         ]
 
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages
-        )
+        response = client.chat.completions.create(model="gpt-4o", messages=messages)
         result = response.choices[0].message.content
 
-        # 解析
-        agree = re.search(r"🔵.*?立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
-        disagree = re.search(r"🔴.*?立場：\s*(.*)", result, re.DOTALL)
+        # 出力整形
+        agree_match = re.search(r"🔵 賛成の立場：\s*(.*?)(?=🔴|$)", result, re.DOTALL)
+        disagree_match = re.search(r"🔴.*?立場：\s*(.*?)(?=\n\n|$)", result, re.DOTALL)
+        extra_match = re.split(r"🔴.*?立場：.*?\n\n", result, flags=re.DOTALL)
 
         st.markdown("### 🔍 AIによる2つの視点と補足")
-
-        if agree:
-            st.markdown(
-                f'<div class="box agree"><strong>🔵 賛成の立場：</strong><br>{agree.group(1).strip()}</div>',
-                unsafe_allow_html=True
-            )
-
-        disagree_text = ""
-        extra_text = ""
-
-        if disagree:
-            parts = disagree.group(1).strip().split("\n\n", 1)
-            disagree_text = parts[0]
-            extra_text = parts[1] if len(parts) > 1 else ""
-
-            st.markdown(
-                f'<div class="box disagree"><strong>🔴 視点をずらした立場：</strong><br>{disagree_text}</div>',
-                unsafe_allow_html=True
-            )
-
-            if extra_text:
-                st.markdown(f'<div class="box extra">{extra_text}</div>', unsafe_allow_html=True)
+        if agree_match:
+            st.markdown(f'<div class="box agree"><strong>🔵 賛成の立場：</strong><br>{agree_match.group(1).strip()}</div>', unsafe_allow_html=True)
+        if disagree_match:
+            st.markdown(f'<div class="box disagree"><strong>🔴 視点をずらした立場：</strong><br>{disagree_match.group(1).strip()}</div>', unsafe_allow_html=True)
+        if len(extra_match) > 1:
+            st.markdown(f'<div class="box extra">{extra_match[1].strip()}</div>', unsafe_allow_html=True)
 
         # ログ保存
         log_path = "liberal_ai_log.csv"
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         file_exists = os.path.isfile(log_path)
-
-        with open(log_path, "a", newline="", encoding="utf-8") as file:
+        with open(log_path, mode='a', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
             if not file_exists:
                 writer.writerow(["timestamp", "user_input", "agree", "disagree", "extra"])
             writer.writerow([
                 now,
                 user_input.strip(),
-                agree.group(1).strip() if agree else "",
-                disagree_text,
-                extra_text
+                agree_match.group(1).strip() if agree_match else "",
+                disagree_match.group(1).strip() if disagree_match else "",
+                extra_match[1].strip() if len(extra_match) > 1 else ""
             ])
