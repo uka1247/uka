@@ -72,6 +72,7 @@ body {{
   background-color: #ffffff !important;
   border-radius: 8px !important;
 }}
+
 .topic-caption {{
   color:#7f8c8d;
   font-size:0.95em;
@@ -82,14 +83,14 @@ body {{
 st.markdown(background_css, unsafe_allow_html=True)
 
 # ==============================
-# ✔ ボタンの大きさ固定 CSS
+# ✔ キーワードカードの大きさを固定
 # ==============================
 button_css = """
 <style>
 div.stButton > button {
-    width: 180px !important;      /* 横幅固定 */
-    height: 90px !important;      /* 高さ固定 */
-    white-space: normal !important; /* テキスト折り返し */
+    width: 180px !important;
+    height: 90px !important;
+    white-space: normal !important;
     line-height: 1.2em;
     padding: 8px 10px;
     border-radius: 14px !important;
@@ -99,6 +100,22 @@ div.stButton > button {
 </style>
 """
 st.markdown(button_css, unsafe_allow_html=True)
+
+# ==============================
+# ✔ 分析ボタンを小さくする CSS（前回と同じサイズ）
+# ==============================
+small_button_css = """
+<style>
+div.stButton > button[kind="primary"] {
+    width: 140px !important;
+    height: 38px !important;
+    padding: 4px 8px !important;
+    font-size: 0.9em !important;
+    border-radius: 8px !important;
+}
+</style>
+"""
+st.markdown(small_button_css, unsafe_allow_html=True)
 
 # ==============================
 # ヘッダー
@@ -127,36 +144,35 @@ topics = [
     "給食の無償化は全国で実施した方がいい？",
     "週休3日制は導入すべき？",
     "選挙はオンライン投票を導入すべき？",
-    "ジェンダー教育は義務教育に含めた方がいいのか",
-    "カジノは合法化でOK？",
+    "ジェンダー教育義務化について",
+    "カジノ合法化はOK？",
     "動物実験は倫理的に許される？",
-    "最近の日本の政治について",
+    "最近の日本政治について",
     "消費税撤廃",
     "政治家の裏金問題",
     "マスコミによる情報統制は撤廃すべき？",
+    # 追加17
     "少子化対策はどこまで国が介入すべき？",
     "学校でスマホを全面禁止すべき？",
     "副業は全ての会社で解禁すべき？",
     "働き方の多様化はもっと進むべき？",
     "過疎地域の公共サービス維持は税金でどこまで支える？",
-    "AIによる自動運転は全面解禁していい？",
-    "インフルエンサーの広告規制は必要？",
+    "AI自動運転は全面解禁していい？",
+    "インフルエンサー広告規制は必要？",
     "外食産業の値上げは受け入れるべき？",
-    "日本における難民受け入れは拡大すべき？",
-    "公共の場の防犯カメラ増設はプライバシー侵害？",
-    "食品ロス削減のために罰則は必要？",
-    "ペットの生体販売は禁止すべき？",
+    "日本の難民受け入れは拡大すべき？",
+    "防犯カメラ増設はプライバシー侵害？",
+    "食品ロス罰則は必要？",
+    "ペット生体販売は禁止すべき？",
     "高齢者の運転免許更新はもっと厳しくすべき？",
     "生成AIを学校教育にどこまで導入する？",
     "災害時SNS情報は規制すべき？",
-    "電車の車内マナーは罰金制にすべき？",
+    "電車内マナーは罰金制にすべき？",
     "観光地のオーバーツーリズムは規制すべき？"
 ]
 
-# ランダム抽選
 random_topics = random.sample(topics, 4)
 
-# セッションステート
 if "selected_topic" not in st.session_state:
     st.session_state.selected_topic = ""
 
@@ -172,7 +188,7 @@ for i, t in enumerate(random_topics):
             st.session_state.selected_topic = t
 
 # ==============================
-# 入力欄（キーワードが placeholder に反映）
+# 入力欄（プレースホルダーにキーワード反映）
 # ==============================
 user_input = st.text_area(
     "💬 あなたの意見をご自由に入力してください",
@@ -224,15 +240,20 @@ if st.button("✨ 分析する") and user_input.strip():
         st.markdown("### 🔍 AIによる2つの視点と補足")
 
         if agree:
-            st.markdown(f'<div class="box agree"><strong>🔵 賛成の立場：</strong><br>{agree.group(1).strip()}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="box agree"><strong>🔵 賛成の立場：</strong><br>{agree.group(1).strip()}</div>',
+                unsafe_allow_html=True
+            )
 
         if disagree:
-            # 補足は反対のあとに含まれている
             parts = disagree.group(1).strip().split("\n\n", 1)
             disagree_text = parts[0]
             extra_text = parts[1] if len(parts) > 1 else ""
 
-            st.markdown(f'<div class="box disagree"><strong>🔴 視点をずらした立場：</strong><br>{disagree_text}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="box disagree"><strong>🔴 視点をずらした立場：</strong><br>{disagree_text}</div>',
+                unsafe_allow_html=True
+            )
 
             if extra_text:
                 st.markdown(f'<div class="box extra">{extra_text}</div>', unsafe_allow_html=True)
@@ -250,8 +271,6 @@ if st.button("✨ 分析する") and user_input.strip():
                 now,
                 user_input.strip(),
                 agree.group(1).strip() if agree else "",
-                disagree_text if disagree else "",
+                disagree_text,
                 extra_text
             ])
-
-
