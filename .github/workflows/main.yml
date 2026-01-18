@@ -1,0 +1,38 @@
+name: AI Twitter Bot
+
+on:
+  schedule:
+    # UTC時間での設定です（日本時間 -9時間）
+    # 毎日 07:30, 12:15, 18:00, 20:00, 22:30 (JST) に実行
+    - cron: '30 22 * * *'
+    - cron: '15 3 * * *'
+    - cron: '0 9 * * *'
+    - cron: '0 11 * * *'
+    - cron: '30 13 * * *'
+  workflow_dispatch: # 手動実行ボタンも追加
+
+jobs:
+  tweet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: コードをチェックアウト
+        uses: actions/checkout@v3
+
+      - name: Pythonをセットアップ
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: ライブラリをインストール
+        run: |
+          pip install -r requirements.txt
+
+      - name: botを実行
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python twitter_bot.py
