@@ -59,14 +59,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+
 # =========================
 # ヘッダー
 # =========================
 st.markdown('<div class="main-title">🧠 PolyView AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtext">あなたの意見に対して賛否を中立的に提示し、補足はエビデンス付きで表示する対話AI</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtext">賛否を提示し、補足はエビデンス（参考情報源）を明示します</div>', unsafe_allow_html=True)
 
 # =========================
-# トピック例
+# トピック例（クリックでコピー）
 # =========================
 st.markdown("<div style='color:#7f8c8d; font-size:0.95em; margin-bottom:0.5em;'>🔎 最近の気になるワード</div>", unsafe_allow_html=True)
 
@@ -95,7 +96,6 @@ topics = [
     "政治家の裏金問題",
     "マスコミによる情報統制は撤廃すべき？",
 ]
-
 random_topics = random.sample(topics, 4)
 
 cards_html = "<div style='display: flex; justify-content: center; gap: 20px; flex-wrap: nowrap;'>"
@@ -103,20 +103,12 @@ for t in random_topics:
     safe_t = t.replace("'", "\\'")
     cards_html += f"""
     <div onclick="navigator.clipboard.writeText('{safe_t}')" style='
-        width: 200px;
-        min-height: 100px;
-        padding: 16px;
-        background-color: white;
-        border-radius: 16px;
+        width: 200px; min-height: 100px; padding: 16px;
+        background-color: white; border-radius: 16px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        font-size: 1em;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1.4em;
-        cursor: pointer;
-        transition: 0.2s;
+        font-size: 1em; text-align: center;
+        display: flex; align-items: center; justify-content: center;
+        line-height: 1.4em; cursor: pointer; transition: 0.2s;
     ' onmouseover="this.style.backgroundColor='#f4f4f4'" onmouseout="this.style.backgroundColor='white'">
         {t}
     </div>
@@ -134,10 +126,16 @@ def _get(obj, key, default=None):
         return obj.get(key, default)
     return getattr(obj, key, default)
 
+def parse_agree_disagree(text: str):
+    agree_match = re.search(r"🔵\s*賛成の立場：\s*(.*?)(?=🔴|$)", text, re.DOTALL)
+    disagree_match = re.search(r"🔴\s*視点をずらした立場：\s*(.*?)(?=$)", text, re.DOTALL)
+    agree = agree_match.group(1).strip() if agree_match else ""
+    disagree = disagree_match.group(1).strip() if disagree_match else ""
+    return agree, disagree
+
 def extract_url_citations(resp):
     """
-    Responses APIの戻りから url_citation（タイトル・URL）を抽出。
-    SDKのオブジェクト/辞書どちらでも動くようにしてある。
+    Responses APIの戻りから url_citation（タイトル・URL）を抽出
     """
     citations = []
     output = _get(resp, "output", []) or []
@@ -165,12 +163,36 @@ def extract_url_citations(resp):
             seen.add(c["url"])
     return uniq
 
-def parse_agree_disagree(text):
-    agree_match = re.search(r"🔵\s*賛成の立場：\s*(.*?)(?=🔴|$)", text, re.DOTALL)
-    disagree_match = re.search(r"🔴\s*視点をずらした立場：\s*(.*?)(?=$)", text, re.DOTALL)
-    agree = agree_match.group(1).strip() if agree_match else ""
-    disagree = disagree_match.group(1).strip() if disagree_match else ""
-    return agree, disagree
+def clean_extra_text(text: str) -> str:
+    """
+    補足枠内から「リンク表示」を消す＆「参考情報源」など余計なセクションを除去
+    - Markdownリンク: [text](url) -> text
+    - 生URL: https://... を除去
+    - 「参考情報源」見出し以降をカット
+    """
+    if not text:
+        return ""
+
+    # 参考情報源/References の見出しが出たら、それ以降は切る
+    cut_patterns = [
+        r"\n\s*参考情報源.*",
+        r"\n\s*References.*",
+        r"\n\s*Sources.*",
+    ]
+    for p in cut_patterns:
+        text = re.sub(p, "", text, flags=re.IGNORECASE | re.DOTALL)
+
+    # Markdownリンクを文字だけに
+    text = re.sub(r"\[([^\]]+)\]\((https?://[^\)]+)\)", r"\1", text)
+
+    # 生URLを除去（行末の句読点などは残ることがあるので軽く整形）
+    text = re.sub(r"https?://\S+", "", text)
+
+    # 余分な空白整理
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text).strip()
+
+    return text
 
 # =========================
 # 入力欄
@@ -180,7 +202,7 @@ user_input = st.text_area("💬 あなたの意見をご自由に入力してく
 # =========================
 # 実行
 # =========================
-if st.button("✨ 分析する") and user_input.strip() != "":
+if st.button("✨ 分析する") and user_input.strip():
     with st.spinner("AIが分析中です..."):
 
         # -------------------------
@@ -217,7 +239,11 @@ if st.button("✨ 分析する") and user_input.strip() != "":
 
         # -------------------------
         # 2) 補足（Web検索あり）
+        #   ※ここで citations を必ず初期化して NameError を潰す
         # -------------------------
+        citations = []   # ✅ 先に定義（例外が起きても NameErrorにならない）
+        extra_text = ""  # ✅ 先に定義
+
         prefixes = [
             "補足になりますが、",
             "ちなみに、",
@@ -239,21 +265,25 @@ if st.button("✨ 分析する") and user_input.strip() != "":
 - 語り口は穏やかで、読者に考える余地を残す
 - 断定しすぎず、必要に応じて「〜とされる」「〜との指摘がある」などで調整する
 - 極端に扇情的な言い回しは避ける
-- できるだけ公的機関・主要メディア・学術/統計など信頼性の高い情報に基づく
-- 出力は“補足文のみ”（見出し・箇条書き・前置き不要）
+- “補足文のみ”を出力（参考情報源・URL・箇条書き・見出しは出力しない）
 """
 
-        # ※必要ならドメイン制限も可能（例）：
-        # tools=[{"type": "web_search", "filters": {"allowed_domains": ["www.nhk.or.jp", "www.reuters.com"]}}]
-        extra_resp = client.responses.create(
-            model="gpt-4o",
-            input=extra_prompt,
-            tools=[{"type": "web_search"}],
-            include=["web_search_call.action.sources"],
-        )
+        try:
+            extra_resp = client.responses.create(
+                model="gpt-4o",
+                input=extra_prompt,
+                tools=[{"type": "web_search"}],
+                include=["web_search_call.action.sources"],
+            )
+            extra_text = (getattr(extra_resp, "output_text", "") or "").strip()
+            citations = extract_url_citations(extra_resp) or []
+        except Exception as e:
+            # Streamlit Cloudで詳細が隠れるので、UIでは短く表示
+            extra_text = "補足の生成時にエラーが発生しました。時間をおいて再実行してください。"
+            citations = []
 
-        extra_text = (getattr(extra_resp, "output_text", "") or "").strip()
-        citations = extract_url_citations(extra_resp)
+        # ✅ 補足枠内のリンクを除去（表示専用）
+        extra_text_display = clean_extra_text(extra_text)
 
         # =========================
         # 表示
@@ -276,21 +306,25 @@ if st.button("✨ 分析する") and user_input.strip() != "":
         else:
             st.warning("⚠️ 視点をずらした立場の抽出に失敗しました。")
 
-        if extra_text:
+        if extra_text_display:
+            # ✅ ここにはリンクを出さない（テキストのみ）
             st.markdown(
-                f'<div class="box extra">{extra_text}</div>',
+                f'<div class="box extra">{extra_text_display}</div>',
                 unsafe_allow_html=True
             )
         else:
             st.warning("⚠️ 補足の生成に失敗しました。")
 
-        # --- 補足の情報源（エビデンス）表示 ---
+        # ✅ 参考情報源（ここだけで表示）
         if citations:
             st.markdown("#### 参考情報源（補足で参照）")
             for i, c in enumerate(citations, 1):
-                st.markdown(f"{i}. [{c['title']}]({c['url']})")
+                title = c.get("title") or "(no title)"
+                url = c.get("url") or ""
+                if url:
+                    st.markdown(f"{i}. [{title}]({url})")
         else:
-            st.caption("（今回の補足では、Web検索による引用URLが取得できませんでした）")
+            st.caption("（今回の補足では、参照URLが取得できませんでした）")
 
         # =========================
         # ✅ CSVログ保存（sourcesも保存）
@@ -308,7 +342,7 @@ if st.button("✨ 分析する") and user_input.strip() != "":
                 user_input.strip(),
                 agree_text,
                 disagree_text,
-                extra_text,
+                extra_text_display,  # 表示と同じ（リンク除去済み）を保存
                 json.dumps(citations, ensure_ascii=False),
             ])
 
