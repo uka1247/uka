@@ -62,8 +62,8 @@ st.markdown("""
 # =========================
 # ヘッダー
 # =========================
-st.markdown('<div class="main-title">🧠 PolyView AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtext">あなたの意見に対して賛否を中立的に提示し、補足はエビデンス付きで表示する対話AI</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">PolyView AI</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtext">あなたの意見に対して賛否を中立的に提示する対話AI</div>', unsafe_allow_html=True)
 
 # =========================
 # トピック例
