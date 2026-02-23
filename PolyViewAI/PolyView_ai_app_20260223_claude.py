@@ -20,7 +20,7 @@ st.markdown("""
         /* ─── ベースリセット ─── */
         html, body, [class*="css"] {
             font-family: 'Noto Sans JP', sans-serif;
-            color: #E2E8F0;
+            color: #F1F5F9;
         }
 
         /* ─── 背景：深いチャコール＋ノイズ感 ─── */
@@ -70,7 +70,7 @@ st.markdown("""
         }
         .subtext {
             font-size: 0.95em;
-            color: #64748B;
+            color: #94A3B8;
             font-weight: 300;
             letter-spacing: 0.01em;
             margin-top: 0.5em;
@@ -90,7 +90,7 @@ st.markdown("""
             font-size: 0.7em;
             letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: #475569;
+            color: #64748B;
             margin-bottom: 0.8em;
         }
 
@@ -102,7 +102,8 @@ st.markdown("""
             margin: 18px 0;
             line-height: 1.8;
             font-size: 0.97em;
-            font-weight: 300;
+            font-weight: 400;
+            color: #F1F5F9;
             overflow: hidden;
             transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                         box-shadow 0.25s ease;
@@ -178,8 +179,8 @@ st.markdown("""
         div[data-baseweb="textarea"] > div {
             background-color: rgba(15, 23, 42, 0.8) !important;
             border-radius: 4px !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            color: #CBD5E1 !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            color: #F1F5F9 !important;
             transition: all 0.3s ease;
             font-family: 'Noto Sans JP', sans-serif !important;
         }
@@ -188,12 +189,12 @@ st.markdown("""
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.08) !important;
         }
         textarea {
-            color: #CBD5E1 !important;
+            color: #F1F5F9 !important;
             font-size: 0.95em !important;
             line-height: 1.7 !important;
         }
         textarea::placeholder {
-            color: #334155 !important;
+            color: #475569 !important;
         }
 
         /* ─── ラベル ─── */
@@ -202,7 +203,7 @@ st.markdown("""
             font-size: 0.72em !important;
             letter-spacing: 0.15em !important;
             text-transform: uppercase !important;
-            color: #475569 !important;
+            color: #64748B !important;
         }
 
         /* ─── ボタン ─── */
@@ -272,8 +273,8 @@ st.markdown("""
             font-size: 1.2em !important;
             font-weight: 700 !important;
             letter-spacing: -0.01em !important;
-            color: #94A3B8 !important;
-            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+            color: #CBD5E1 !important;
+            border-bottom: 1px solid rgba(255,255,255,0.07) !important;
             padding-bottom: 0.6em !important;
             margin-bottom: 1.5em !important;
         }
